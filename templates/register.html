@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация - Медицинские обследования{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/register.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="register-wrapper">
+    <div class="register-container">
+        <div class="register-header">
+            <h2>Регистрация</h2>
+            <p>Создайте новый аккаунт</p>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category if category != 'message' else 'info' }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" class="register-form">
+            <div class="form-group">
+                <label for="user_name">Имя пользователя *</label>
+                <input type="text" id="user_name" name="user_name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="full_name">Полное имя *</label>
+                <input type="text" id="full_name" name="full_name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email *</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Пароль *</label>
+                <input type="password" id="password" name="password" required>
+                <div class="password-hint">Минимум 6 символов</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirm_password">Подтверждение пароля *</label>
+                <input type="password" id="confirm_password" name="confirm_password" required>
+            </div>
+            
+            <button type="submit" class="register-btn">Зарегистрироваться</button>
+        </form>
+        
+        <div class="register-footer">
+            <p>Уже есть аккаунт? <a href="{{ url_for('login') }}">Войдите</a></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Password validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        var password = document.getElementById('password').value;
+        var confirm = document.getElementById('confirm_password').value;
+        
+        if (password !== confirm) {
+            e.preventDefault();
+            alert('Пароли не совпадают!');
+        } else if (password.length < 6) {
+            e.preventDefault();
+            alert('Пароль должен содержать минимум 6 символов!');
+        }
+    });
+    
+    // Auto-hide flash messages
+    setTimeout(function() {
+        var flashes = document.querySelectorAll('.flash');
+        flashes.forEach(function(flash) {
+            flash.style.opacity = '0';
+            setTimeout(function() {
+                flash.remove();
+            }, 300);
+        });
+    }, 3000);
+</script>
+{% endblock %}
