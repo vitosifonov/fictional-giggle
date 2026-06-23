@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Панель управления - Медицинские обследования{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>🏥 Медицинские обследования сотрудников</h1>
+    <div class="user-info">
+        <span class="user-name">👋 Здравствуйте, {{ user.user_name if user else session.user_name }}!</span>
+        <a href="{{ url_for('logout') }}" class="btn btn-danger">🚪 Выйти</a>
+    </div>
+</div>
+
+<div class="dashboard-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category if category != 'message' else 'info' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% if not employee %}
+    <div class="profile-card">
+        <div class="profile-header">
+            <h2>📝 Заполните профиль сотрудника</h2>
+        </div>
+        <div class="empty-state">
+            <p>Для начала работы необходимо заполнить информацию о себе как о сотруднике</p>
+            <a href="{{ url_for('profile') }}" class="btn btn-primary">📋 Заполнить профиль</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Всего обследований</h3>
+            <div class="stat-number">{{ stats.total if stats else 0 }}</div>
+            <div class="stat-label">за все время</div>
+        </div>
+        <div class="stat-card">
+            <h3>Пройдено успешно</h3>
+            <div class="stat-number">{{ stats.passed if stats else 0 }}</div>
+            <div class="stat-label">успешных</div>
+        </div>
+        <div class="stat-card">
+            <h3>Требуют внимания</h3>
+            <div class="stat-number">{{ stats.failed if stats else 0 }}</div>
+            <div class="stat-label">не пройдено</div>
+        </div>
+    </div>
+
+    <div class="profile-card">
+        <div class="profile-header">
+            <h2>👤 Информация о сотруднике</h2>
+            <a href="{{ url_for('profile') }}" class="edit-profile-btn">✏️ Редактировать</a>
+        </div>
+        <div class="profile-info">
+            <div class="info-item">
+                <span class="info-label">ФИО:</span>
+                <span class="info-value">{{ employee[7] if employee[7] else 'Не указано' }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Должность:</span>
+                <span class="info-value">{{ employee[2] if employee[2] else 'Не указана' }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Отдел:</span>
+                <span class="info-value">{{ employee[3] if employee[3] else 'Не указан' }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Email:</span>
+                <span class="info-value">{{ employee[8] if employee[8] else 'Не указан' }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Телефон:</span>
+                <span class="info-value">{{ employee[6] if employee[6] else 'Не указан' }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Дата приема:</span>
+                <span class="info-value">{{ employee[4] if employee[4] else 'Не указана' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="exams-section">
+        <div class="exams-header">
+            <h2>📋 Мои медицинские обследования</h2>
+        </div>
+
+        {% if exams %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Тип обследования</th>
+                        <th>Врач</th>
+                        <th>Результат</th>
+                        <th>Статус</th>
+                        <th>Следующее обследование</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exam in exams %}
+                    <tr>
+                        <td>{{ exam.date }}</td>
+                        <td>{{ exam.type }}</td>
+                        <td>{{ exam.doctor }}</td>
+                        <td>{{ exam.result }}</td>
+                        <td class="{% if exam.is_passed %}status-passed{% else %}status-failed{% endif %}">
+                            {% if exam.is_passed %}✅ Пройдено{% else %}❌ Не пройдено{% endif %}
+                        </td>
+                        <td>{{ exam.next_date if exam.next_date else 'Не назначена' }}</td>
+                        <td class="action-buttons">
+                            <button onclick="openEditModal({{ exam.id }}, '{{ exam.result }}', {{ exam.is_passed|lower }}, '{{ exam.next_date if exam.next_date else '' }}')" class="btn btn-primary btn-icon">✏️</button>
+                            <a href="{{ url_for('delete_exam', exam_id=exam.id) }}" class="btn btn-danger btn-icon" onclick="return confirm('Удалить запись об обследовании?')">🗑️</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>У вас пока нет записей об обследованиях</p>
+        </div>
+        {% endif %}
+
+        <div class="add-form">
+            <h4>Добавить новое обследование</h4>
+            <form method="POST" action="{{ url_for('create_exam') }}">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Дата обследования *</label>
+                        <input type="date" name="exam_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Тип обследования *</label>
+                        <select name="exam_type" required>
+                            <option value="Ежегодный профосмотр">Ежегодный профосмотр</option>
+                            <option value="Дополнительный">Дополнительный</option>
+                            <option value="Предрейсовый">Предрейсовый</option>
+                            <option value="Внеплановый">Внеплановый</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Врач</label>
+                    <input type="text" name="doctor_name" placeholder="ФИО врача">
+                </div>
+
+                <div class="form-group">
+                    <label>Результат обследования</label>
+                    <input type="text" name="result" placeholder="Результаты и заключение">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" name="is_passed" id="is_passed">
+                        <label for="is_passed">Обследование пройдено успешно</label>
+                    </div>
+                    <div class="form-group">
+                        <label>Дата следующего обследования</label>
+                        <input type="date" name="next_exam_date">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Сохранить обследование</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal for editing exam -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Редактировать обследование</h3>
+            <span class="close">&times;</span>
+        </div>
+        <form id="editForm" method="POST">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Результат обследования</label>
+                    <input type="text" name="result" id="edit_result" required>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" name="is_passed" id="edit_is_passed">
+                    <label for="edit_is_passed">Обследование пройдено успешно</label>
+                </div>
+                <div class="form-group">
+                    <label>Дата следующего обследования</label>
+                    <input type="date" name="next_exam_date" id="edit_next_date">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    var modal = document.getElementById('editModal');
+    var span = document.getElementsByClassName('close')[0];
+
+    function openEditModal(examId, result, isPassed, nextDate) {
+        var form = document.getElementById('editForm');
+        form.action = '/exams/update/' + examId;
+        document.getElementById('edit_result').value = result || '';
+        document.getElementById('edit_is_passed').checked = isPassed;
+        document.getElementById('edit_next_date').value = nextDate || '';
+        modal.style.display = 'block';
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+    }
+
+    if (span) {
+        span.onclick = function() {
+            closeModal();
+        }
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+
+    // Auto-hide flash messages
+    setTimeout(function() {
+        var flashes = document.querySelectorAll('.flash');
+        flashes.forEach(function(flash) {
+            flash.style.opacity = '0';
+            setTimeout(function() {
+                if (flash.remove) flash.remove();
+            }, 300);
+        });
+    }, 3000);
+</script>
+{% endblock %}
