@@ -1,2 +1,0 @@
-# fictional-giggle
-Проект жесткий 
