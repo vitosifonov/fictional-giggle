@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Вход - Медицинские обследования{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="login-wrapper">
+    <div class="login-container">
+        <div class="login-header">
+            <h2>Медицинские обследования</h2>
+            <p>Войдите в систему для продолжения работы</p>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category if category != 'message' else 'info' }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" class="login-form">
+            <div class="form-group">
+                <label for="user_name">Имя пользователя</label>
+                <input type="text" id="user_name" name="user_name" required autofocus>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit" class="login-btn">Войти в систему</button>
+        </form>
+        
+        <div class="login-footer">
+            <p>Нет аккаунта? <a href="{{ url_for('register') }}">Зарегистрируйтесь</a></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-hide flash messages after 3 seconds
+    setTimeout(function() {
+        var flashes = document.querySelectorAll('.flash');
+        flashes.forEach(function(flash) {
+            flash.style.opacity = '0';
+            setTimeout(function() {
+                flash.remove();
+            }, 300);
+        });
+    }, 3000);
+</script>
+{% endblock %}
